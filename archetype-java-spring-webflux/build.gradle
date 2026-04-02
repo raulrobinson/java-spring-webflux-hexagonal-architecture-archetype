@@ -1,0 +1,65 @@
+// ---------------------------------------------------------------------------
+// Read the project version from the first ## [X.Y.Z] entry in CHANGELOG.md
+// ---------------------------------------------------------------------------
+def extractVersion = {
+    def changelog = file("${rootDir}/CHANGELOG.md")
+    if (!changelog.exists()) {
+        logger.warn("[VERSION] CHANGELOG.md not found – defaulting to 0.0.0")
+        return '0.0.0'
+    }
+    def pattern = ~/^##\s+\[?(\d+\.\d+\.\d+[^]\s]*)]?.*/
+    def line = changelog.readLines().find { it =~ pattern }
+    if (!line) {
+        logger.warn("[VERSION] No version entry found in CHANGELOG.md – defaulting to 0.0.0")
+        return '0.0.0'
+    }
+    def matcher = (line =~ pattern)
+    def v = matcher[0][1]
+    logger.lifecycle("[VERSION] Resolved from CHANGELOG.md → {}", v)
+    return v
+}
+
+def projectVersion = extractVersion()
+
+allprojects {
+    group = 'com.raulbolivarnavas'
+    version = projectVersion
+    description = 'Archetype for Backend Services using Java Spring Webflux'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+
+    apply plugin: 'java'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    dependencies {
+        implementation     platform(libs.spring.boot.bom)
+        testImplementation platform(libs.spring.boot.bom)
+
+        implementation     libs.boot.starter.validation
+        testImplementation libs.boot.starter.test
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+}
+
+tasks.register("bootRun") {
+    dependsOn(":app-service:bootRun")
+}

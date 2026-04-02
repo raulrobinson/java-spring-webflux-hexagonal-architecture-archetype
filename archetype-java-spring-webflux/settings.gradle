@@ -1,0 +1,53 @@
+rootProject.name = 'archetype-java-spring-webflux'
+
+// Application Layers
+include "app-service"
+//include "use-case"
+project(':app-service').projectDir = file('applications/app-service')
+//project(':use-case').projectDir = file('backend/applications/use-case')
+//
+//// Domain Layers
+//include "model"
+//project(':model').projectDir = file('backend/domain/model')
+//include "ports"
+//project(':ports').projectDir = file('backend/domain/ports')
+//
+//// Infrastructure Layers
+//include "reactive-web"
+//project(':reactive-web').projectDir = file('backend/infrastructure/entry-points/reactive-web')
+//
+//include "aws-secrets"
+//project(':aws-secrets').projectDir = file('backend/infrastructure/driven/aws-secrets')
+//
+//include "aws-parameters"
+//project(':aws-parameters').projectDir = file('backend/infrastructure/driven/aws-parameters')
+//
+//include "aws-dynamodb"
+//project(':aws-dynamodb').projectDir = file('backend/infrastructure/driven/aws-dynamodb')
+//
+//include "aws-lambdas"
+//project(':aws-lambdas').projectDir = file('backend/infrastructure/driven/aws-lambdas')
+//
+//include "aws-eventbridge"
+//project(':aws-eventbridge').projectDir = file('backend/infrastructure/driven/aws-eventbridge')
+//
+//include "aws-sns"
+//project(':aws-sns').projectDir = file('backend/infrastructure/driven/aws-sns')
+//
+//include "aws-sqs"
+//project(':aws-sqs').projectDir = file('backend/infrastructure/driven/aws-sqs')
+//
+//include "aws-cognito"
+//project(':aws-cognito').projectDir = file('backend/infrastructure/driven/aws-cognito')
+//
+//include "authentication"
+//project(':authentication').projectDir = file('backend/infrastructure/driven/authentication')
+//
+//include "api-mocks"
+//project(':api-mocks').projectDir = file('backend/infrastructure/driven/api-mocks')
+//
+//include "inmemmory-persistence"
+//project(':inmemmory-persistence').projectDir = file('backend/infrastructure/driven/inmemmory-persistence')
+//
+//include "helpers"
+//project(':helpers').projectDir = file('backend/infrastructure/helpers')
