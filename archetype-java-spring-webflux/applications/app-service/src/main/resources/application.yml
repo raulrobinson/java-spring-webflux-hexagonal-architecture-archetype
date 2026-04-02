@@ -30,7 +30,7 @@ spring:
 
 info:
   app:
-    name: "Archetype Java Spring WebFLux - Service"
+    name: "Archetype Java Spring WebFlux - Service"
     description: "Microservicio de gestión de API Mocks.
                   Permite crear, consultar, actualizar y eliminar definiciones de mocks
                   HTTP, así como recargar la configuración en caliente y cargar datos
