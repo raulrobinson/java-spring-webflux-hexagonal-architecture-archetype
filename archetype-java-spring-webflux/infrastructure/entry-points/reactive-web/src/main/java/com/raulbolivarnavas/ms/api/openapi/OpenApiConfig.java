@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,20 +16,19 @@ import java.util.List;
 public class OpenApiConfig {
 
     @Bean
-    public OpenAPI openAPI() {
+    public OpenAPI openAPI(
+            @Value("${info.app.name:}") String title,
+            @Value("${info.app.description:}") String description,
+            @Value("${info.app.version:}") String version
+    ) {
         return new OpenAPI()
                 .info(new Info()
-                        .title("API Mocks Service")
-                        .description("""
-                                Microservicio de gestión de API Mocks.
-                                Permite crear, consultar, actualizar y eliminar definiciones de mocks
-                                HTTP, así como recargar la configuración en caliente y cargar datos
-                                desde SQL.
-                                """)
-                        .version("1.0.0")
+                        .title(title)
+                        .description(description)
+                        .version(version)
                         .contact(new Contact()
                                 .name("Raúl Bolívar")
-                                .email("rbolivar@raulbolivarnavas.com"))
+                                .email("raul.bolivar.n@gmail.com"))
                         .license(new License()
                                 .name("Internal — Enterprise")
                                 .url("https://raulbolivarnavas.com")))

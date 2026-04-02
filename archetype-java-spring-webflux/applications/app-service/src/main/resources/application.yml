@@ -24,8 +24,11 @@ spring:
 
 info:
   app:
-    name: "Backend For Frontend - AWS Fullstack Service"
-    description: "API service for the AWS Fullstack Service demo application, acting as a Backend For Frontend (BFF) to aggregate data from multiple microservices and provide a unified API for frontend applications."
+    name: "Archetype Java Spring WebFLux - Service"
+    description: "Microservicio de gestión de API Mocks.
+                  Permite crear, consultar, actualizar y eliminar definiciones de mocks
+                  HTTP, así como recargar la configuración en caliente y cargar datos
+                  desde SQL."
     version: "1.0.0"
     encoding: "UTF-8"
     java:
