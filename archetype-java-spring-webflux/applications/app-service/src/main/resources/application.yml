@@ -2,22 +2,28 @@ spring:
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+
   main:
     lazy-initialization: true
+
   application:
     name: archetype-java-spring-webflux
+
   http:
     codecs:
       max-in-memory-size: 10MB
+
   datasource:
     url: jdbc:h2:file:./build/inmemmory-persistence/dashboard-mocks
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   h2:
     console:
       enabled: true
       path: /h2-console
+
   sql:
     init:
       mode: always
