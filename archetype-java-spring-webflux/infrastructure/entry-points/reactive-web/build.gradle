@@ -1,0 +1,18 @@
+dependencies {
+    implementation project(':model')
+    implementation project(':ports')
+    implementation project(':use-case')
+    //implementation project(':helpers')
+
+    implementation libs.boot.starter.webflux
+    implementation libs.boot.springdoc.webflux
+
+    //implementation platform('software.amazon.awssdk:bom:2.27.21')
+    //implementation "software.amazon.awssdk:auth"
+
+    compileOnly         libs.lombok
+    annotationProcessor libs.lombok
+
+    implementation      libs.mapstruct
+    annotationProcessor libs.mapstruct.processor
+}

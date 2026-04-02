@@ -1,0 +1,644 @@
+openapi: "3.0.3"
+
+info:
+  title: API Mocks Service
+  description: |
+    Microservicio de gestión de API Mocks.
+    Permite crear, consultar, actualizar y eliminar definiciones de mocks
+    HTTP, así como recargar la configuración en caliente y cargar datos desde SQL.
+  version: "1.0.0"
+  contact:
+    name: Raúl Bolívar
+    email: rbolivar@raulbolivarnavas.com
+  license:
+    name: Internal — Enterprise
+    url: https://raulbolivarnavas.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local
+  - url: https://dev.api.raulbolivarnavas.com
+    description: Dev
+  - url: https://qa.api.raulbolivarnavas.com
+    description: QA
+
+tags:
+  - name: API Mocks
+    description: CRUD de definiciones de mocks HTTP y operaciones de administración
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  /api/api-mocks:
+
+    get:
+      tags: [API Mocks]
+      operationId: listApiMocks
+      summary: Listar API Mocks
+      description: |
+        Retorna la lista paginada de todos los API Mocks registrados.
+        Soporta filtros opcionales por método HTTP y estado activo.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - $ref: '#/components/parameters/MethodFilter'
+        - $ref: '#/components/parameters/ActiveFilter'
+      responses:
+        "200":
+          description: Lista obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiMockPageResponse'
+              example:
+                content:
+                  - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    method: GET
+                    path: "/customers/{id}"
+                    statusCode: 200
+                    responseBody: '{"id":"123","name":"Test Customer"}'
+                    headers:
+                      Content-Type: application/json
+                    delay: 0
+                    active: true
+                    description: "Mock para obtener cliente por ID"
+                totalElements: 1
+                page: 0
+                size: 20
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [API Mocks]
+      operationId: createApiMock
+      summary: Crear API Mock
+      description: |
+        Crea un nuevo API Mock con la definición de ruta, método HTTP,
+        código de respuesta y cuerpo. Una vez creado queda disponible
+        inmediatamente para interceptar peticiones.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        description: Definición del mock a crear
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiMockRequest'
+            example:
+              method: GET
+              path: "/customers/{id}"
+              statusCode: 200
+              responseBody: '{"id":"123","name":"Test Customer"}'
+              headers:
+                Content-Type: application/json
+              delay: 0
+              active: true
+              description: "Mock para obtener cliente por ID"
+      responses:
+        "201":
+          description: Mock creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiMock'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "409":
+          $ref: '#/components/responses/Conflict'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/api-mocks/reload:
+
+    post:
+      tags: [API Mocks]
+      operationId: reloadApiMocks
+      summary: Recargar mocks en caliente
+      description: |
+        Fuerza la recarga de todos los mocks desde la fuente de datos
+        sin reiniciar el servicio. Útil tras modificaciones directas en
+        base de datos o tras una carga SQL.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        "200":
+          description: Recarga ejecutada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReloadResult'
+              example:
+                loaded: 42
+                message: "Mocks reloaded successfully"
+                timestamp: "2026-04-02T10:30:00Z"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/api-mocks/load-sql:
+
+    post:
+      tags: [API Mocks]
+      operationId: loadApiMocksFromSql
+      summary: Cargar mocks desde SQL
+      description: |
+        Ejecuta una sentencia SQL SELECT personalizada y carga los resultados
+        como definiciones de mocks. Permite carga masiva desde otras fuentes.
+        La sentencia debe retornar columnas compatibles con el esquema ApiMock.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        description: SQL a ejecutar y datasource opcional
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoadSqlRequest'
+            example:
+              sql: "SELECT * FROM api_mocks WHERE active = true"
+              dataSource: "primary"
+      responses:
+        "200":
+          description: Mocks cargados exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReloadResult'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/api-mocks/{id}:
+
+    get:
+      tags: [API Mocks]
+      operationId: getApiMock
+      summary: Obtener API Mock por ID
+      description: Retorna el detalle completo de un API Mock dado su identificador UUID.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        "200":
+          description: Mock encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiMock'
+              example:
+                id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                method: GET
+                path: "/customers/{id}"
+                statusCode: 200
+                responseBody: '{"id":"123","name":"Test Customer"}'
+                headers:
+                  Content-Type: application/json
+                delay: 0
+                active: true
+                description: "Mock para obtener cliente por ID"
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags: [API Mocks]
+      operationId: updateApiMock
+      summary: Actualizar API Mock
+      description: Reemplaza completamente la definición de un API Mock existente.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        description: Nueva definición completa del mock
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiMockRequest'
+      responses:
+        "200":
+          description: Mock actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiMock'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [API Mocks]
+      operationId: deleteApiMock
+      summary: Eliminar API Mock
+      description: Elimina permanentemente un API Mock. La operación no es reversible.
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+        - $ref: '#/components/parameters/SourceBank'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        "204":
+          description: Mock eliminado exitosamente
+        "404":
+          $ref: '#/components/responses/NotFound'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  # ── Parameters ─────────────────────────────────────────────────────────────
+  parameters:
+
+    ApplicationId:
+      name: Application-Id
+      in: header
+      required: true
+      description: Identificador del sistema cliente
+      schema:
+        type: string
+        example: APP-BANCA-MOVIL
+
+    SourceBank:
+      name: Source-Bank
+      in: header
+      required: true
+      description: Código del banco origen
+      schema:
+        type: string
+        example: "0001"
+
+    XCorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      description: ID de trazabilidad distribuida. Se genera automáticamente si no se envía.
+      schema:
+        type: string
+        format: uuid
+        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    IdPath:
+      name: id
+      in: path
+      required: true
+      description: Identificador UUID del API Mock
+      schema:
+        type: string
+        format: uuid
+        example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    PageParam:
+      name: page
+      in: query
+      required: false
+      description: Número de página (base 0)
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+        example: 0
+
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      description: Elementos por página
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+        example: 20
+
+    MethodFilter:
+      name: method
+      in: query
+      required: false
+      description: Filtrar por método HTTP
+      schema:
+        type: string
+        enum: [GET, POST, PUT, PATCH, DELETE]
+
+    ActiveFilter:
+      name: active
+      in: query
+      required: false
+      description: Filtrar por estado activo/inactivo
+      schema:
+        type: boolean
+
+  # ── Schemas ─────────────────────────────────────────────────────────────────
+  schemas:
+
+    ApiMock:
+      type: object
+      description: Representación completa de un API Mock persistido
+      required:
+        - id
+        - method
+        - path
+        - statusCode
+        - responseBody
+        - active
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador único UUID
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        method:
+          type: string
+          description: Método HTTP
+          enum: [GET, POST, PUT, PATCH, DELETE]
+          example: GET
+        path:
+          type: string
+          description: Ruta del mock — soporta path variables con sintaxis {variable}
+          example: "/customers/{id}"
+        statusCode:
+          type: integer
+          description: Código HTTP de respuesta
+          minimum: 100
+          maximum: 599
+          example: 200
+        responseBody:
+          type: string
+          description: Cuerpo de respuesta serializado como JSON string
+          example: '{"id":"123","name":"Test Customer"}'
+        headers:
+          type: object
+          description: Headers adicionales incluidos en la respuesta del mock
+          additionalProperties:
+            type: string
+          example:
+            Content-Type: application/json
+            X-Mock-Source: api-mocks-service
+        delay:
+          type: integer
+          description: Delay artificial en milisegundos antes de responder
+          minimum: 0
+          default: 0
+          example: 0
+        active:
+          type: boolean
+          description: Si el mock está activo y disponible para interceptar peticiones
+          example: true
+        description:
+          type: string
+          description: Descripción opcional del propósito del mock
+          example: "Mock para obtener cliente por ID"
+        createdAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de creación
+          example: "2026-04-02T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Fecha y hora de última actualización
+          example: "2026-04-02T10:30:00Z"
+
+    ApiMockRequest:
+      type: object
+      description: Payload para crear o actualizar un API Mock
+      required:
+        - method
+        - path
+        - statusCode
+        - responseBody
+      properties:
+        method:
+          type: string
+          description: Método HTTP
+          enum: [GET, POST, PUT, PATCH, DELETE]
+          example: POST
+        path:
+          type: string
+          description: Ruta del mock
+          minLength: 1
+          example: "/customers"
+        statusCode:
+          type: integer
+          description: Código HTTP de respuesta
+          minimum: 100
+          maximum: 599
+          example: 201
+        responseBody:
+          type: string
+          description: Cuerpo de respuesta serializado como JSON string
+          minLength: 1
+          example: '{"id":"456","name":"New Customer"}'
+        headers:
+          type: object
+          description: Headers adicionales de respuesta
+          additionalProperties:
+            type: string
+          example:
+            Content-Type: application/json
+        delay:
+          type: integer
+          description: Delay artificial en milisegundos
+          minimum: 0
+          default: 0
+          example: 150
+        active:
+          type: boolean
+          description: Estado inicial del mock
+          default: true
+          example: true
+        description:
+          type: string
+          description: Descripción opcional
+          example: "Mock para crear cliente"
+
+    ApiMockPageResponse:
+      type: object
+      description: Respuesta paginada de API Mocks
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMock'
+        totalElements:
+          type: integer
+          format: int64
+          description: Total de elementos en todas las páginas
+          example: 42
+        page:
+          type: integer
+          description: Página actual (base 0)
+          example: 0
+        size:
+          type: integer
+          description: Tamaño de página solicitado
+          example: 20
+
+    LoadSqlRequest:
+      type: object
+      description: Payload para cargar mocks desde una sentencia SQL
+      required:
+        - sql
+      properties:
+        sql:
+          type: string
+          description: |
+            Sentencia SQL SELECT que retorna filas compatibles con el esquema ApiMock.
+            Columnas esperadas: method, path, status_code, response_body, headers, delay, active, description.
+          minLength: 10
+          example: "SELECT * FROM api_mocks WHERE active = true"
+        dataSource:
+          type: string
+          description: Nombre del datasource configurado. Usa el default si se omite.
+          example: "primary"
+
+    ReloadResult:
+      type: object
+      description: Resultado de una operación de recarga o carga masiva
+      properties:
+        loaded:
+          type: integer
+          description: Número de mocks cargados o recargados
+          example: 42
+        message:
+          type: string
+          description: Mensaje descriptivo del resultado
+          example: "Mocks reloaded successfully"
+        timestamp:
+          type: string
+          format: date-time
+          description: Momento en que se ejecutó la operación
+          example: "2026-04-02T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      description: Estructura estándar de error para todas las respuestas de fallo
+      properties:
+        code:
+          type: string
+          description: Código de error de negocio
+          example: "MOCK_NOT_FOUND"
+        message:
+          type: string
+          description: Descripción legible del error
+          example: "ApiMock with id 3fa85f64 not found"
+        details:
+          type: array
+          description: Lista de errores de validación detallados (si aplica)
+          items:
+            type: string
+          example:
+            - "method: must not be blank"
+            - "statusCode: must be between 100 and 599"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-04-02T10:30:00Z"
+        correlationId:
+          type: string
+          format: uuid
+          example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+        path:
+          type: string
+          example: "/api/api-mocks/3fa85f64"
+
+  # ── Responses reutilizables ─────────────────────────────────────────────────
+  responses:
+
+    BadRequest:
+      description: Petición malformada o con parámetros inválidos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: BAD_REQUEST
+            message: "Request body is invalid"
+            details:
+              - "method: must not be blank"
+              - "path: must not be blank"
+            timestamp: "2026-04-02T10:30:00Z"
+            correlationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            path: "/api/api-mocks"
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: MOCK_NOT_FOUND
+            message: "ApiMock with id 3fa85f64-5717-4562-b3fc-2c963f66afa6 not found"
+            details: []
+            timestamp: "2026-04-02T10:30:00Z"
+            correlationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            path: "/api/api-mocks/3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+    Conflict:
+      description: Conflicto — el recurso ya existe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: MOCK_ALREADY_EXISTS
+            message: "ApiMock for GET /customers/{id} already exists"
+            details: []
+            timestamp: "2026-04-02T10:30:00Z"
+            correlationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            path: "/api/api-mocks"
+
+    UnprocessableEntity:
+      description: Regla de negocio violada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: DOMAIN_RULE_VIOLATION
+            message: "statusCode 999 is not a valid HTTP status code"
+            details: []
+            timestamp: "2026-04-02T10:30:00Z"
+            correlationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            path: "/api/api-mocks"
+
+    InternalServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INTERNAL_ERROR
+            message: "An unexpected error occurred"
+            details: []
+            timestamp: "2026-04-02T10:30:00Z"
+            correlationId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            path: "/api/api-mocks"

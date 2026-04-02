@@ -5,6 +5,13 @@ plugins {
 }
 
 dependencies {
+    implementation project(':model')
+    implementation project(':ports')
+    implementation project(':use-case')
+    implementation project(':api-mocks')
+    implementation project(':inmemmory-persistence')
+    implementation project(':reactive-web')
+
     implementation libs.boot.starter.webflux
 }
 

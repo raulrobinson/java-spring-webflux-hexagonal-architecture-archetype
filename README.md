@@ -52,7 +52,7 @@ Entrada (HTTP / SQS / EventBridge)
 
 ## 2. Principios de diseño
 
-![hexagonal_archetype_structure.svg](hexagonal_archetype_structure.svg)
+![hexagonal_archetype_structure.svg](docs/hexagonal_archetype_structure.svg)
 
 ### SOLID aplicado por capa
 
