@@ -6,8 +6,12 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -15,10 +19,129 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
 public class OpenApiSchemasConfig {
+
+    // ── Nombre de esquemas reutilizables ──────────────────────────────────
+    public static final String SCHEMA_API_MOCK          = "ApiMock";
+    public static final String SCHEMA_API_MOCK_REQUEST  = "ApiMockRequest";
+    public static final String SCHEMA_API_MOCK_RESPONSE = "ApiMockResponse";
+    public static final String SCHEMA_LOAD_SQL_REQUEST  = "LoadSqlRequest";
+    public static final String SCHEMA_ERROR             = "ErrorResponse";
+    public static final String SCHEMA_RELOAD_RESULT     = "ReloadResult";
+
+    @Bean
+    public OpenApiCustomizer schemasCustomizer() {
+        return openApi -> openApi.components(buildComponents());
+    }
+
+    private Components buildComponents() {
+        return new Components()
+                .schemas(Map.of(
+                        SCHEMA_API_MOCK,         apiMockSchema(),
+                        SCHEMA_API_MOCK_REQUEST,  apiMockRequestSchema(),
+                        SCHEMA_API_MOCK_RESPONSE, apiMockResponseSchema(),
+                        SCHEMA_LOAD_SQL_REQUEST,  loadSqlRequestSchema(),
+                        SCHEMA_RELOAD_RESULT,     reloadResultSchema(),
+                        SCHEMA_ERROR,             errorResponseSchema()
+                ));
+    }
+
+    // ─── Schemas ──────────────────────────────────────────────────────────
+
+    @SuppressWarnings("unchecked")
+    private Schema<?> apiMockSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Representación completa de un API Mock persistido")
+                .required(List.of("id", "method", "path", "statusCode", "responseBody"))
+                .properties(Map.of(
+                        "id",           new StringSchema().description("Identificador único UUID").example("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+                        "method",       new StringSchema().description("Método HTTP").example("GET")._enum(List.of("GET","POST","PUT","PATCH","DELETE")),
+                        "path",         new StringSchema().description("Ruta del mock — soporta path variables").example("/customers/{id}"),
+                        "statusCode",   new Schema<Integer>().type("integer").description("Código HTTP de respuesta").example(200),
+                        "responseBody", new StringSchema().description("Cuerpo de respuesta en formato JSON string").example("{\"id\":\"123\",\"name\":\"Test\"}"),
+                        "headers",      new Schema<>().type("object").description("Headers adicionales de respuesta").additionalProperties(new StringSchema()),
+                        "delay",        new Schema<Integer>().type("integer").description("Delay artificial en milisegundos").example(0),
+                        "active",       new Schema<Boolean>().type("boolean").description("Si el mock está activo").example(true),
+                        "description",  new StringSchema().description("Descripción opcional del mock").example("Mock para get customer")
+                ));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Schema<?> apiMockRequestSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Payload para crear o actualizar un API Mock")
+                .required(List.of("method", "path", "statusCode", "responseBody"))
+                .properties(Map.of(
+                        "method",       new StringSchema().description("Método HTTP")._enum(List.of("GET","POST","PUT","PATCH","DELETE")),
+                        "path",         new StringSchema().description("Ruta del mock").example("/customers/{id}"),
+                        "statusCode",   new Schema<Integer>().type("integer").example(200),
+                        "responseBody", new StringSchema().description("Body JSON como string").example("{\"status\":\"ok\"}"),
+                        "headers",      new Schema<>().type("object").additionalProperties(new StringSchema()),
+                        "delay",        new Schema<Integer>().type("integer").minimum(new java.math.BigDecimal(0)).example(0),
+                        "active",       new Schema<Boolean>().type("boolean").example(true),
+                        "description",  new StringSchema().example("Mock de prueba")
+                ));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Schema<?> apiMockResponseSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Lista paginada de API Mocks")
+                .properties(Map.of(
+                        "content",       new Schema<>().type("array").items(new Schema<>().$ref("#/components/schemas/" + SCHEMA_API_MOCK)),
+                        "totalElements", new Schema<Long>().type("integer").format("int64").example(10),
+                        "page",          new Schema<Integer>().type("integer").example(0),
+                        "size",          new Schema<Integer>().type("integer").example(20)
+                ));
+    }
+
+    private Schema<?> loadSqlRequestSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Payload para cargar mocks desde sentencias SQL")
+                .required(List.of("sql"))
+                .properties(Map.of(
+                        "sql",         new StringSchema().description("Sentencia SQL SELECT que retorna filas de mocks").example("SELECT * FROM api_mocks WHERE active = true"),
+                        "dataSource",  new StringSchema().description("Nombre del datasource configurado (opcional, usa el default si se omite)").example("primary")
+                ));
+    }
+
+    private Schema<?> reloadResultSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Resultado de una operación de recarga")
+                .properties(Map.of(
+                        "loaded",    new Schema<Integer>().type("integer").description("Número de mocks cargados").example(42),
+                        "message",   new StringSchema().example("Mocks reloaded successfully"),
+                        "timestamp", new StringSchema().format("date-time").example("2025-01-15T10:30:00Z")
+                ));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Schema<?> errorResponseSchema() {
+        return new Schema<>()
+                .type("object")
+                .description("Estructura estándar de error")
+                .properties(Map.of(
+                        "code",          new StringSchema().example("MOCK_NOT_FOUND"),
+                        "message",       new StringSchema().example("ApiMock with id xxx not found"),
+                        "details",       new Schema<>().type("array").items(new StringSchema()),
+                        "timestamp",     new StringSchema().format("date-time"),
+                        "correlationId", new StringSchema().format("uuid"),
+                        "path",          new StringSchema().example("/api/api-mocks/xxx")
+                ));
+    }
+
+    // ─── Operaciones documentadas ───────────────────────────────────────────
 
     @Bean
     @RouterOperations({
