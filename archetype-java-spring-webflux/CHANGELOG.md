@@ -11,6 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial structure and implementation of the dashboard application, including basic functionalities for managing AWS services and user authentication.
 
 ### Changed
-- Renamed output JAR to `dashboard-fullstack-X.X.X.jar`
+- Renamed output JAR to `archetype-java-spring-webflux.jar`
 - Version is now driven by `CHANGELOG.md`
 
