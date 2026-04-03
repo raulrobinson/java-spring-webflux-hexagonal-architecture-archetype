@@ -11,6 +11,8 @@ dependencies {
     implementation project(':api-mocks')
     implementation project(':inmemmory-persistence')
     implementation project(':reactive-web')
+    implementation project(':parameter-store')
+    implementation project(':secrets-manager')
 
     implementation libs.boot.starter.webflux
 }

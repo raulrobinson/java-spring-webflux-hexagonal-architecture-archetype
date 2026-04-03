@@ -16,12 +16,12 @@ project(':ports').projectDir = file('domain/ports')
 include "reactive-web"
 project(':reactive-web').projectDir = file('infrastructure/entry-points/reactive-web')
 
-//include "aws-secrets"
-//project(':aws-secrets').projectDir = file('infrastructure/driven/aws-secrets')
-//
-//include "aws-parameters"
-//project(':aws-parameters').projectDir = file('infrastructure/driven/aws-parameters')
-//
+include "secrets-manager"
+project(':secrets-manager').projectDir = file('infrastructure/driven/secrets-manager')
+
+include "parameter-store"
+project(':parameter-store').projectDir = file('infrastructure/driven/parameter-store')
+
 //include "aws-dynamodb"
 //project(':aws-dynamodb').projectDir = file('infrastructure/driven/aws-dynamodb')
 //

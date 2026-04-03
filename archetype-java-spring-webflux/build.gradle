@@ -28,6 +28,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
@@ -50,6 +51,11 @@ subprojects {
     dependencies {
         implementation     platform(libs.spring.boot.bom)
         testImplementation platform(libs.spring.boot.bom)
+
+        implementation 'com.github.raulrobinson.aws-libs:aws-secrets-manager:v1.0.0'
+        implementation 'com.github.raulrobinson.aws-libs:aws-parameter-store:v1.0.0'
+        implementation 'com.github.raulrobinson.aws-libs:aws-lambda-client:v1.0.0'
+        implementation 'com.github.raulrobinson.aws-libs:aws-eventbridge:v1.0.0'
 
         implementation     libs.boot.starter.validation
         testImplementation libs.boot.starter.test

@@ -1,6 +1,8 @@
 package com.raulbolivarnavas.ms.api;
 
 import com.raulbolivarnavas.ms.api.handlers.ApiMocksHandler;
+import com.raulbolivarnavas.ms.api.handlers.ParameterStoreHandler;
+import com.raulbolivarnavas.ms.api.handlers.SecretsManagerHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,12 +15,20 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 public class RestRouter {
 
     private final ApiMocksHandler apiMocksHandler;
+    private final ParameterStoreHandler parameterStoreHandler;
+    private final SecretsManagerHandler secretsManagerHandler;
 
     @Bean
     RouterFunction<ServerResponse> apiRoutes() {
 
         return RouterFunctions.route()
                 .path("/api", b -> b
+
+                        // ── Secrets Manager ─────────────────────────────
+                        .GET("/secrets", secretsManagerHandler::getSecret)
+
+                        // ── Parameter Store ─────────────────────────────
+                        .GET("/parameters", parameterStoreHandler::getParameter)
 
                         // ── API Mocks ───────────────────────────────────
                         .GET("/api-mocks",           apiMocksHandler::list)

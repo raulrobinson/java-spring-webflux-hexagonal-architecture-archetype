@@ -55,6 +55,8 @@ dashboard:
 
 aws:
   region: us-east-1
+  secrets:
+    cache-ttl: 3600
   endpoint: http://localhost:4566
   dynamodb:
     tablePrefix: ""

@@ -1,0 +1,15 @@
+dependencies {
+    implementation project(':model')
+    implementation project(':ports')
+    //implementation project(':helpers')
+    implementation libs.boot.starter.webflux
+
+    implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
+    implementation "software.amazon.awssdk:ssm"
+
+    compileOnly         'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+
+    implementation      'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+}
